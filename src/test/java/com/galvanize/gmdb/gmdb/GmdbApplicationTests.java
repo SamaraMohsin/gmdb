@@ -1,11 +1,50 @@
 package com.galvanize.gmdb.gmdb;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.springframework.boot.test.autoconfigure.json.AutoConfigureJsonTesters;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.json.JacksonTester;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.galvanize.gmdb.gmdb.Controller.MovieController;
+import com.galvanize.gmdb.gmdb.Model.Movie;
+import com.galvanize.gmdb.gmdb.Repository.MovieRepository;
+
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.BDDMockito.then;
+
+import java.util.LinkedList;
+import java.util.List;
 
 
+@AutoConfigureJsonTesters
 @SpringBootTest
+@AutoConfigureMockMvc
 public class GmdbApplicationTests {
+
+    private MockMvc mvc;
+
+	@Mock
+	private MovieRepository movieRepo;
+
+	@InjectMocks
+	private MovieController movieController;
+    
+    @BeforeEach
+	public void setUp(){
+		JacksonTester.initFields(this, new ObjectMapper());
+		mvc = MockMvcBuilders.standaloneSetup(movieController).build();
+	}
 
 	// Stories for this project are shown below in order of value, with the highest value listed first.
     // This microservice will contain the CRUD operations required to interact with the GMDB movie database.
@@ -14,6 +53,23 @@ public class GmdbApplicationTests {
     // 1. As a user
     //    I can GET a list of movies from GMDB that includes Movie ID | Movie Title | Year Released | Genre | Runtime
     //    so that I can see the list of available movies.
+
+    @Test
+	public void getMovieShouldReturnAListOfMovies() throws Exception {
+	    //Setup
+        Movie movie1 = new Movie("Harry Porter",1992,"Emotional",2400);
+        List<Movie> movies= new LinkedList<>();
+        movies.add(movie1);
+	    //Execute
+        when(movieRepo.findAll()).thenReturn(movies);
+	    //Assert
+        mvc.perform(get("/movies")
+				.contentType(MediaType.APPLICATION_JSON))
+			.andExpect(status().isOk());
+            then(movieRepo).should(times(1)).findAll();
+	    //Teardown
+	}
+
     //
     // 2. As a user
     //    I can provide a movie ID and get back the record shown in story 1, plus a list of reviews that contains Review ID | Movie ID | Reviewer ID | Review Text | DateTime last modified
